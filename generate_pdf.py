@@ -36,6 +36,7 @@ import math
 import os
 import tempfile
 import time
+import gc  # Import garbage collector for memory management
 
 
 def convert_to_pixels(image, float_x, float_y):
@@ -53,25 +54,41 @@ def draw_bounding_boxes_and_annotations(image_path, targets, taps, swipes, outpu
     try:
         with PILImage.open(image_path) as img:
             draw = ImageDraw.Draw(img)
-            width, height = img.size
-
-            # Draw bounding boxes
+            width, height = img.size            # Draw bounding boxes
             for target in targets:
-                x, y, w, h = target['x'], target['y'], target['width'], target['height']
-                draw.rectangle([x, y, x + w, y + h], outline='red', width=2)
-
-            # Draw crosses for tap actions
+                try:
+                    x, y, w, h = target['x'], target['y'], target['width'], target['height']
+                    # Ensure coordinates are within image bounds
+                    x = max(0, min(x, width))
+                    y = max(0, min(y, height))
+                    w = min(w, width - x)
+                    h = min(h, height - y)
+                    draw.rectangle([x, y, x + w, y + h], outline='red', width=2)
+                except Exception as e:
+                    print(f"Error drawing bounding box: {e}")            # Draw crosses for tap actions
             for tap in taps:
-                tap_x, tap_y = convert_to_pixels(img, tap['x'], tap['y'])
-                cross_size = 40
-                draw.line((tap_x - cross_size, tap_y, tap_x + cross_size, tap_y), fill='red', width=5)
-                draw.line((tap_x, tap_y - cross_size, tap_x, tap_y + cross_size), fill='red', width=5)
-
-            # Draw arrows for swipe actions
+                try:
+                    tap_x, tap_y = convert_to_pixels(img, tap['x'], tap['y'])
+                    # Ensure coordinates are within image bounds
+                    tap_x = max(0, min(tap_x, width))
+                    tap_y = max(0, min(tap_y, height))
+                    cross_size = 40
+                    draw.line((tap_x - cross_size, tap_y, tap_x + cross_size, tap_y), fill='red', width=5)
+                    draw.line((tap_x, tap_y - cross_size, tap_x, tap_y + cross_size), fill='red', width=5)
+                except Exception as e:
+                    print(f"Error drawing tap cross: {e}")            # Draw arrows for swipe actions
             for swipe in swipes:
-                start_x, start_y = convert_to_pixels(img, swipe['startX'], swipe['startY'])
-                end_x, end_y = convert_to_pixels(img, swipe['endX'], swipe['endY'])
-                draw_arrow(draw, start_x, start_y, end_x, end_y, fill='red', width=5)
+                try:
+                    start_x, start_y = convert_to_pixels(img, swipe['startX'], swipe['startY'])
+                    end_x, end_y = convert_to_pixels(img, swipe['endX'], swipe['endY'])
+                    # Ensure coordinates are within image bounds
+                    start_x = max(0, min(start_x, width))
+                    start_y = max(0, min(start_y, height))
+                    end_x = max(0, min(end_x, width))
+                    end_y = max(0, min(end_y, height))
+                    draw_arrow(draw, start_x, start_y, end_x, end_y, fill='red', width=5)
+                except Exception as e:
+                    print(f"Error drawing swipe arrow: {e}")
 
             img.save(output_path)
     except Exception as e:
@@ -310,10 +327,17 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_di
                         print(f"Found image at: {image_path}")
                     else:
                         print(f"Could not find image for ID {image_id}. Searched paths: {possible_paths}")
-                      img_element = None
-                    if image_path and os.path.exists(image_path):
+                      img_element = None                    if image_path and os.path.exists(image_path):
                         # First optimize the image to reduce processing time and memory usage
-                        optimized_path = optimize_image(image_path, max_size=(800, 800), quality=85)
+                        max_size = (800, 800)
+                        quality = 85
+                        
+                        # Use smaller images on Render to avoid timeouts
+                        if os.environ.get('RENDER') == 'true':
+                            max_size = (400, 400)
+                            quality = 70
+                            
+                        optimized_path = optimize_image(image_path, max_size=max_size, quality=quality)
                         output_image_path = os.path.join(temp_dir, f"temp_{step['image']['id']}.png")
                         targets = [action['target']] if 'target' in action else []
                         taps = []
@@ -322,10 +346,12 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_di
                         if action_type == 'tap':
                             taps.append({'x': action['action']['x'], 'y': action['action']['y']})
                         elif action_type == 'swipe':
-                            swipes.append(action['action'])
-
-                        # Add a short sleep to prevent overwhelming the system
+                            swipes.append(action['action'])                        # Add a short sleep to prevent overwhelming the system
                         time.sleep(0.1)
+                        
+                        # Force garbage collection periodically to prevent memory issues
+                        if i % 5 == 0:  # Every 5 steps
+                            gc.collect()
 
                         image_with_annotations = draw_bounding_boxes_and_annotations(optimized_path, targets, taps, swipes,
                                                                                      output_image_path)
@@ -400,11 +426,10 @@ def optimize_image(image_path, max_size=(800, 800), quality=85):
         Path to the optimized image
     """
     try:
-        with PILImage.open(image_path) as img:
-            # Lower max size for Render free tier
+        with PILImage.open(image_path) as img:            # Lower max size for Render free tier
             if os.environ.get('RENDER') == 'true':
-                max_size = (500, 500)
-                quality = 75
+                max_size = (400, 400)  # Smaller size for Render
+                quality = 70  # Lower quality to reduce processing time
                 
             # Don't process if already smaller than max_size
             if img.width <= max_size[0] and img.height <= max_size[1]:

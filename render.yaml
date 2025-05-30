@@ -1,10 +1,10 @@
 services:
   - type: web
     name: pdf-generator
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --timeout 120
-    plan: free    envVars:
+    env: python    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --timeout 300 --workers 1 --threads 2
+    plan: free
+    envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: UPLOAD_FOLDER
@@ -12,8 +12,9 @@ services:
       - key: OUTPUT_FOLDER
         value: /tmp/outputs
       - key: RENDER
-        value: "true"
-      - key: PYTHONUNBUFFERED
+        value: "true"      - key: PYTHONUNBUFFERED
         value: "1"
       - key: WEB_CONCURRENCY
         value: "1"
+      - key: GUNICORN_CMD_ARGS
+        value: "--keep-alive 60 --log-level debug"

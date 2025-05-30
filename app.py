@@ -63,10 +63,10 @@ def upload_file():
                         os.remove(zip_path)
                 except Exception as e:
                     print(f"Error removing ZIP file: {str(e)}")
-        
-        output_filename = f"{base_filename}_report_{unique_id}.pdf"
+          output_filename = f"{base_filename}_report_{unique_id}.pdf"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-          try:
+        
+        try:
             # Set a timeout for the process to avoid hanging the server
             import threading
             import time
@@ -75,23 +75,24 @@ def upload_file():
             # Create a flag to track if processing completed
             processing_complete = {"done": False, "error": None}
             
-            # Function to run in separate thread
-            def process_pdf():
+            # Function to run in separate thread            def process_pdf():
                 try:
+                    print(f"Starting PDF generation for {json_filename} with {len(os.listdir(images_dir))} images")
                     # Call the PDF generation function with the images directory
                     create_multi_task_pdf_report(input_path, output_path, images_dir)
                     processing_complete["done"] = True
+                    print(f"PDF generation completed successfully: {output_path}")
                 except Exception as proc_error:
+                    import traceback
                     processing_complete["error"] = str(proc_error)
                     print(f"Error in PDF processing thread: {proc_error}")
+                    print(f"Traceback: {traceback.format_exc()}")
             
             # Start the processing in a background thread
             process_thread = threading.Thread(target=process_pdf)
             process_thread.daemon = True
-            process_thread.start()
-            
-            # Wait for processing to complete with a timeout
-            max_wait_time = 90  # seconds
+            process_thread.start()            # Wait for processing to complete with a timeout
+            max_wait_time = 270  # seconds (increased for larger files, but less than Gunicorn's 300s timeout)
             wait_interval = 1   # seconds
             total_waited = 0
             
