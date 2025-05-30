@@ -268,7 +268,9 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None):
                     possible_paths = [
                         os.path.join(os.path.dirname(json_file_path), image_filename),  # Same directory as JSON
                         os.path.join(os.path.dirname(json_file_path), 'images', image_filename),  # images subfolder
-                        os.path.join('uploads', image_filename)  # uploads folder
+                        os.path.join('uploads', image_filename),  # uploads folder
+                        os.path.join('/tmp/uploads', image_filename),  # Render free tier tmp folder
+                        os.path.join(os.environ.get('UPLOAD_FOLDER', 'uploads'), image_filename)  # Environment variable path
                     ]
                     
                     image_path = None
@@ -276,6 +278,12 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None):
                         if os.path.exists(path):
                             image_path = path
                             break
+                    
+                    # Log image path search results for debugging
+                    if image_path:
+                        print(f"Found image at: {image_path}")
+                    else:
+                        print(f"Could not find image {image_filename}. Searched paths: {possible_paths}")
                     
                     img_element = None
                     if image_path and os.path.exists(image_path):

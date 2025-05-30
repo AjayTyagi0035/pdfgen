@@ -4,14 +4,11 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
-    disk:
-      name: data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
+    plan: free
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: UPLOAD_FOLDER
-        value: /opt/render/project/src/data/uploads
+        value: /tmp/uploads
       - key: OUTPUT_FOLDER
-        value: /opt/render/project/src/data/outputs
+        value: /tmp/outputs

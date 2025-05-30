@@ -30,10 +30,10 @@ def upload_file():
             
             input_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_id}_{filename}")
             file.save(input_path)
-            
-            output_filename = f"{base_filename}_report_{unique_id}.pdf"
+              output_filename = f"{base_filename}_report_{unique_id}.pdf"
             output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-              try:
+            
+            try:
                 # Call your PDF generation function
                 create_multi_task_pdf_report(input_path, output_path)
                 
