@@ -21,16 +21,14 @@ def upload_file():
         file = request.files['file']
         if file.filename == '':
             return render_template('index.html', error='No selected file')
-        
-        if file and file.filename.endswith('.json'):
+          if file and file.filename.endswith('.json'):
             # Generate a unique filename to prevent collisions
             unique_id = str(uuid.uuid4())
             filename = secure_filename(file.filename)
             base_filename = os.path.splitext(filename)[0]
-            
             input_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_id}_{filename}")
             file.save(input_path)
-              output_filename = f"{base_filename}_report_{unique_id}.pdf"
+            output_filename = f"{base_filename}_report_{unique_id}.pdf"
             output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
             
             try:
