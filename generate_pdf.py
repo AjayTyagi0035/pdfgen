@@ -23,12 +23,6 @@ Example usage:
    python generate_pdf.py ~/com.panerabread/com.panerabread.json -o reports/panera.pdf
 """
 
-import json
-import argparse
-import math
-import os
-import tempfile
-
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -36,6 +30,12 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from PIL import Image as PILImage
 from PIL import ImageDraw
+import json
+import argparse
+import math
+import os
+import tempfile
+import time
 
 
 def convert_to_pixels(image, float_x, float_y):
@@ -310,9 +310,10 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_di
                         print(f"Found image at: {image_path}")
                     else:
                         print(f"Could not find image for ID {image_id}. Searched paths: {possible_paths}")
-                    
-                    img_element = None
+                      img_element = None
                     if image_path and os.path.exists(image_path):
+                        # First optimize the image to reduce processing time and memory usage
+                        optimized_path = optimize_image(image_path, max_size=(800, 800), quality=85)
                         output_image_path = os.path.join(temp_dir, f"temp_{step['image']['id']}.png")
                         targets = [action['target']] if 'target' in action else []
                         taps = []
@@ -323,7 +324,10 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_di
                         elif action_type == 'swipe':
                             swipes.append(action['action'])
 
-                        image_with_annotations = draw_bounding_boxes_and_annotations(image_path, targets, taps, swipes,
+                        # Add a short sleep to prevent overwhelming the system
+                        time.sleep(0.1)
+
+                        image_with_annotations = draw_bounding_boxes_and_annotations(optimized_path, targets, taps, swipes,
                                                                                      output_image_path)
                         if image_with_annotations:
                             img_element = Image(image_with_annotations)
@@ -380,6 +384,51 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_di
         # Build the PDF document
         doc.build(elements)
     print(f"PDF report successfully created: {output_pdf_path}")
+
+
+def optimize_image(image_path, max_size=(800, 800), quality=85):
+    """
+    Optimize an image by resizing it if necessary and reducing quality
+    to decrease file size and processing time.
+    
+    Args:
+        image_path: Path to the original image
+        max_size: Maximum width and height (will maintain aspect ratio)
+        quality: JPEG quality (1-100)
+    
+    Returns:
+        Path to the optimized image
+    """
+    try:
+        with PILImage.open(image_path) as img:
+            # Lower max size for Render free tier
+            if os.environ.get('RENDER') == 'true':
+                max_size = (500, 500)
+                quality = 75
+                
+            # Don't process if already smaller than max_size
+            if img.width <= max_size[0] and img.height <= max_size[1]:
+                return image_path
+                
+            # Calculate new dimensions while maintaining aspect ratio
+            try:
+                img.thumbnail(max_size, PILImage.Resampling.LANCZOS)
+            except AttributeError:
+                # For older Pillow versions
+                img.thumbnail(max_size, PILImage.LANCZOS)
+            
+            # Create filename for optimized image
+            directory = os.path.dirname(image_path)
+            filename = os.path.basename(image_path)
+            optimized_path = os.path.join(directory, f"opt_{filename}")
+            
+            # Save with reduced quality
+            img.save(optimized_path, quality=quality, optimize=True)
+            print(f"Optimized image: {image_path} -> {optimized_path}")
+            return optimized_path
+    except Exception as e:
+        print(f"Error optimizing image {image_path}: {e}")
+        return image_path  # Return original path if optimization fails
 
 
 def main():

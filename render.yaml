@@ -3,12 +3,17 @@ services:
     name: pdf-generator
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
-    plan: free
-    envVars:
+    startCommand: gunicorn app:app --timeout 120
+    plan: free    envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: UPLOAD_FOLDER
         value: /tmp/uploads
       - key: OUTPUT_FOLDER
         value: /tmp/outputs
+      - key: RENDER
+        value: "true"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "1"

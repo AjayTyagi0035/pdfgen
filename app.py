@@ -66,11 +66,46 @@ def upload_file():
         
         output_filename = f"{base_filename}_report_{unique_id}.pdf"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-        
-        try:
-            # Call the PDF generation function with the images directory
-            create_multi_task_pdf_report(input_path, output_path, images_dir)
+          try:
+            # Set a timeout for the process to avoid hanging the server
+            import threading
+            import time
+            from functools import partial
             
+            # Create a flag to track if processing completed
+            processing_complete = {"done": False, "error": None}
+            
+            # Function to run in separate thread
+            def process_pdf():
+                try:
+                    # Call the PDF generation function with the images directory
+                    create_multi_task_pdf_report(input_path, output_path, images_dir)
+                    processing_complete["done"] = True
+                except Exception as proc_error:
+                    processing_complete["error"] = str(proc_error)
+                    print(f"Error in PDF processing thread: {proc_error}")
+            
+            # Start the processing in a background thread
+            process_thread = threading.Thread(target=process_pdf)
+            process_thread.daemon = True
+            process_thread.start()
+            
+            # Wait for processing to complete with a timeout
+            max_wait_time = 90  # seconds
+            wait_interval = 1   # seconds
+            total_waited = 0
+            
+            while not processing_complete["done"] and total_waited < max_wait_time:
+                time.sleep(wait_interval)
+                total_waited += wait_interval
+            
+            # Check if process completed successfully
+            if not processing_complete["done"]:
+                if process_thread.is_alive():
+                    return render_template('index.html', error="PDF generation timed out. Your file might be too large or complex. Try with a smaller file or fewer images.")
+                if processing_complete["error"]:
+                    return render_template('index.html', error=f"Error generating PDF: {processing_complete['error']}")
+                
             # Return the PDF file for download
             response = send_file(output_path, as_attachment=True, download_name=f"{base_filename}_report.pdf")
             
