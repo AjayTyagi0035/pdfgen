@@ -17,7 +17,7 @@ def upload_file():
         # Check if the post request has the file part
         if 'file' not in request.files:
             return render_template('index.html', error='No file part')
-          file = request.files['file']
+        file = request.files['file']
         if file.filename == '':
             return render_template('index.html', error='No selected file')
         if file and file.filename.endswith('.json'):
