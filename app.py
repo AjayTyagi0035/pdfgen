@@ -1,6 +1,8 @@
 from flask import Flask, request, render_template, send_file
 import os
 import uuid
+import zipfile
+import shutil
 from werkzeug.utils import secure_filename
 from generate_pdf import create_multi_task_pdf_report
 
@@ -16,46 +18,83 @@ def upload_file():
     if request.method == 'POST':
         # Check if the post request has the file part
         if 'file' not in request.files:
-            return render_template('index.html', error='No file part')
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('index.html', error='No selected file')
-        if file and file.filename.endswith('.json'):
-            # Generate a unique filename to prevent collisions
-            unique_id = str(uuid.uuid4())
-            filename = secure_filename(file.filename)
-            base_filename = os.path.splitext(filename)[0]
-            input_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_id}_{filename}")
-            file.save(input_path)
-            output_filename = f"{base_filename}_report_{unique_id}.pdf"
-            output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-            
-            try:
-                # Call your PDF generation function
-                create_multi_task_pdf_report(input_path, output_path)
-                
-                # Return the PDF file for download
-                response = send_file(output_path, as_attachment=True, download_name=f"{base_filename}_report.pdf")
-                
-                # Schedule file cleanup after the response is sent
-                @response.call_on_close
-                def cleanup():
-                    try:
-                        # Delete temporary files to save space
-                        if os.path.exists(input_path):
-                            os.remove(input_path)
-                        if os.path.exists(output_path):
-                            os.remove(output_path)
-                    except Exception as cleanup_error:
-                        print(f"Error during cleanup: {cleanup_error}")
-                
-                return response
-            except Exception as e:
-                return render_template('index.html', error=f"Error generating PDF: {str(e)}")
+            return render_template('index.html', error='No JSON file selected')
         
-        return render_template('index.html', error='Invalid file type. Please upload a JSON file.')
-    
-    return render_template('index.html')
+        json_file = request.files['file']
+        if json_file.filename == '':
+            return render_template('index.html', error='No JSON file selected')
+        
+        # Check if JSON file is valid
+        if not json_file.filename.endswith('.json'):
+            return render_template('index.html', error='Invalid file type. Please upload a JSON file')
+            
+        # Generate a unique ID for this processing session
+        unique_id = str(uuid.uuid4())
+        
+        # Process JSON file
+        json_filename = secure_filename(json_file.filename)
+        base_filename = os.path.splitext(json_filename)[0]
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_id}_{json_filename}")
+        json_file.save(input_path)
+        
+        # Create a directory for extracted images
+        images_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"images_{unique_id}")
+        os.makedirs(images_dir, exist_ok=True)
+        
+        # Process ZIP file if present
+        if 'images' in request.files:
+            zip_file = request.files['images']
+            if zip_file and zip_file.filename != '' and zip_file.filename.endswith('.zip'):
+                zip_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_id}_images.zip")
+                zip_file.save(zip_path)
+                
+                # Extract images from ZIP file
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(images_dir)
+                    print(f"Extracted ZIP contents to {images_dir}")
+                except Exception as e:
+                    print(f"Error extracting ZIP file: {str(e)}")
+                    return render_template('index.html', error=f"Error extracting ZIP file: {str(e)}")
+                
+                # Delete the zip file after extraction
+                try:
+                    if os.path.exists(zip_path):
+                        os.remove(zip_path)
+                except Exception as e:
+                    print(f"Error removing ZIP file: {str(e)}")
+        
+        output_filename = f"{base_filename}_report_{unique_id}.pdf"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        
+        try:
+            # Call the PDF generation function with the images directory
+            create_multi_task_pdf_report(input_path, output_path, images_dir)
+            
+            # Return the PDF file for download
+            response = send_file(output_path, as_attachment=True, download_name=f"{base_filename}_report.pdf")
+            
+            # Schedule file cleanup after the response is sent
+            @response.call_on_close
+            def cleanup():
+                try:
+                    # Delete temporary files to save space
+                    if os.path.exists(input_path):
+                        os.remove(input_path)
+                    if os.path.exists(output_path):
+                        os.remove(output_path)
+                    if os.path.exists(images_dir):
+                        shutil.rmtree(images_dir)
+                except Exception as cleanup_error:
+                    print(f"Error during cleanup: {cleanup_error}")
+            
+            return response
+        except Exception as e:
+            # Clean up in case of error
+            if os.path.exists(images_dir):
+                shutil.rmtree(images_dir)
+            return render_template('index.html', error=f"Error generating PDF: {str(e)}")
+      return render_template('index.html')
 
 if __name__ == '__main__':
     # Use environment variable PORT if available (for Render deployment)

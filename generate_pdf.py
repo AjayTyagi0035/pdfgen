@@ -100,7 +100,15 @@ def draw_arrow(draw, x1, y1, x2, y2, fill='red', width=5):
     draw.polygon([(x2, y2), (x3, y3), (x4, y4)], fill=fill)
 
 
-def create_multi_task_pdf_report(json_file_path, output_pdf_path=None):
+def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_dir=None):
+    """
+    Generate a PDF report from a JSON file containing task data.
+    
+    Args:
+        json_file_path: Path to the JSON file
+        output_pdf_path: Path where the output PDF will be saved
+        images_dir: Directory containing image files referenced in the JSON
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         print(f"Using temporary directory: {temp_dir}")
         with open(json_file_path, 'r', encoding='utf-8') as file:
@@ -260,18 +268,36 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None):
                             [step_id],
                             [action_type_para],
                             [action_phrase_para]
-                        ]
-
-                    # Image processing
+                        ]                    # Image processing
                     # Try multiple possible locations for the image
-                    image_filename = f"{step['image']['id']}.png"
-                    possible_paths = [
-                        os.path.join(os.path.dirname(json_file_path), image_filename),  # Same directory as JSON
-                        os.path.join(os.path.dirname(json_file_path), 'images', image_filename),  # images subfolder
-                        os.path.join('uploads', image_filename),  # uploads folder
-                        os.path.join('/tmp/uploads', image_filename),  # Render free tier tmp folder
-                        os.path.join(os.environ.get('UPLOAD_FOLDER', 'uploads'), image_filename)  # Environment variable path
-                    ]
+                    image_id = step['image']['id']
+                    # Check for multiple image extensions
+                    image_extensions = ['.png', '.jpg', '.jpeg']
+                    
+                    possible_paths = []
+                    
+                    # First look in the uploaded images directory if provided
+                    if images_dir:
+                        # Look for images in the root of the extracted directory
+                        for ext in image_extensions:
+                            possible_paths.append(os.path.join(images_dir, f"{image_id}{ext}"))
+                        
+                        # Also check for nested folders in the ZIP
+                        for root, dirs, files in os.walk(images_dir):
+                            for file in files:
+                                basename, ext = os.path.splitext(file)
+                                if basename == image_id or file.startswith(f"{image_id}."):
+                                    possible_paths.append(os.path.join(root, file))
+                    
+                    # Add other possible locations as fallbacks
+                    for ext in image_extensions:
+                        possible_paths.extend([
+                            os.path.join(os.path.dirname(json_file_path), f"{image_id}{ext}"),  # Same directory as JSON
+                            os.path.join(os.path.dirname(json_file_path), 'images', f"{image_id}{ext}"),  # images subfolder
+                            os.path.join('uploads', f"{image_id}{ext}"),  # uploads folder
+                            os.path.join('/tmp/uploads', f"{image_id}{ext}"),  # Render free tier tmp folder
+                            os.path.join(os.environ.get('UPLOAD_FOLDER', 'uploads'), f"{image_id}{ext}")  # Environment variable path
+                        ])
                     
                     image_path = None
                     for path in possible_paths:
@@ -283,7 +309,7 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None):
                     if image_path:
                         print(f"Found image at: {image_path}")
                     else:
-                        print(f"Could not find image {image_filename}. Searched paths: {possible_paths}")
+                        print(f"Could not find image for ID {image_id}. Searched paths: {possible_paths}")
                     
                     img_element = None
                     if image_path and os.path.exists(image_path):
@@ -360,6 +386,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate PDF report from JSON task data")
     parser.add_argument("input_json", help="Path to the input JSON file")
     parser.add_argument("-o", "--output", help="Path to save the output PDF (optional)")
+    parser.add_argument("-i", "--images", help="Path to directory containing image files (optional)")
 
     args = parser.parse_args()
 
@@ -369,9 +396,15 @@ def main():
         return
 
     output_path = args.output
+    images_dir = args.images
+
+    # Validate images directory if provided
+    if images_dir and not os.path.exists(images_dir):
+        print(f"Warning: Images directory '{images_dir}' does not exist.")
+        images_dir = None
 
     try:
-        create_multi_task_pdf_report(args.input_json, output_path)
+        create_multi_task_pdf_report(args.input_json, output_path, images_dir)
     except Exception as e:
         print(f"An error occurred while generating the report: {str(e)}")
 

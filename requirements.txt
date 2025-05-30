@@ -3,3 +3,4 @@ reportlab==4.0.5
 Pillow==10.0.0
 gunicorn==21.2.0
 werkzeug==2.3.7
+zipfile36; python_version < '3.7'

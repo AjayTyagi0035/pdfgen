@@ -69,18 +69,21 @@
         {% if error %}
         <div class="error">{{ error }}</div>
         {% endif %}
-        
-        <form method="POST" enctype="multipart/form-data">
+          <form method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="file">Select JSON file:</label>
                 <input type="file" id="file" name="file" accept=".json" class="file-input">
+            </div>
+            <div class="form-group">
+                <label for="images">Select Images ZIP file (optional):</label>
+                <input type="file" id="images" name="images" accept=".zip" class="file-input">
             </div>
             <button type="submit">Generate PDF</button>
         </form>
         
         <div class="info">
             <p><strong>Note:</strong> This tool generates a PDF report visualizing the tasks for a collected app and all its steps, actions, and screenshots.</p>
-            <p>Your JSON file should include app information, tasks, and references to relevant PNG images.</p>
+            <p>Upload both your JSON file and a ZIP file containing the referenced images. The image filenames should match the IDs in the JSON file.</p>
         </div>
     </div>
 </body>
