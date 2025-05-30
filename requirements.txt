@@ -1,0 +1,5 @@
+flask==2.3.3
+reportlab==4.0.5
+Pillow==10.0.0
+gunicorn==21.2.0
+werkzeug==2.3.7
