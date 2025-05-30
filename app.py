@@ -85,7 +85,7 @@ def upload_file():
                         os.remove(output_path)
                     if os.path.exists(images_dir):
                         shutil.rmtree(images_dir)                
-                    except Exception as cleanup_error:
+                except Exception as cleanup_error:
                     print(f"Error during cleanup: {cleanup_error}")
             
             return response
