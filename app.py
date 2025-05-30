@@ -17,11 +17,10 @@ def upload_file():
         # Check if the post request has the file part
         if 'file' not in request.files:
             return render_template('index.html', error='No file part')
-        
-        file = request.files['file']
+          file = request.files['file']
         if file.filename == '':
             return render_template('index.html', error='No selected file')
-          if file and file.filename.endswith('.json'):
+        if file and file.filename.endswith('.json'):
             # Generate a unique filename to prevent collisions
             unique_id = str(uuid.uuid4())
             filename = secure_filename(file.filename)
