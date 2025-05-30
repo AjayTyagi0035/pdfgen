@@ -88,13 +88,12 @@ def upload_file():
                 except Exception as cleanup_error:
                     print(f"Error during cleanup: {cleanup_error}")
             
-            return response
-        except Exception as e:
+            return response        except Exception as e:
             # Clean up in case of error
             if os.path.exists(images_dir):
                 shutil.rmtree(images_dir)
             return render_template('index.html', error=f"Error generating PDF: {str(e)}")
-      return render_template('index.html')
+    return render_template('index.html')
 
 if __name__ == '__main__':
     # Use environment variable PORT if available (for Render deployment)
