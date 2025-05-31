@@ -81,7 +81,8 @@ def draw_bounding_boxes_and_annotations(image_path, targets, taps, swipes, outpu
                     end_x, end_y = convert_to_pixels(img, swipe['endX'], swipe['endY'])
                     # Ensure coordinates are within image bounds
                     start_x = max(0, min(start_x, width))
-                    start_y = max(0, min(start_y, height))                    end_x = max(0, min(end_x, width))
+                    start_y = max(0, min(start_y, height))                    
+                    end_x = max(0, min(end_x, width))
                     end_y = max(0, min(end_y, height))
                     draw_arrow(draw, start_x, start_y, end_x, end_y, fill='red', width=2)  # Reduced width from 5 to 2
                 except Exception as e:
