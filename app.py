@@ -63,7 +63,8 @@ def upload_file():
                 # Delete the zip file after extraction
                 try:
                     if os.path.exists(zip_path):
-                        os.remove(zip_path)                  except Exception as e:
+                        os.remove(zip_path)                  
+                except Exception as e:
                     print(f"Error removing ZIP file: {str(e)}")
         
         output_filename = f"{base_filename}_report_{unique_id}.pdf"
