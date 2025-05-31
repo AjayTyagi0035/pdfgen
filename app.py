@@ -56,7 +56,8 @@ def upload_file():
                 except Exception as e:
                     print(f"Error extracting ZIP file: {str(e)}")
                     return render_template('index.html', error=f"Error extracting ZIP file: {str(e)}")
-                  # Delete the zip file after extraction
+                
+                # Delete the zip file after extraction
                 try:
                     if os.path.exists(zip_path):
                         os.remove(zip_path)                
@@ -65,9 +66,9 @@ def upload_file():
                     
         output_filename = f"{base_filename}_report_{unique_id}.pdf"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-        
-        try:
-            # Set a timeout for the process to avoid hanging the server            import threading
+          try:
+            # Set a timeout for the process to avoid hanging the server
+            import threading
             import time
             from functools import partial
             
@@ -84,10 +85,10 @@ def upload_file():
                     print(f"PDF generation completed successfully: {output_path}")
                 except Exception as proc_error:
                     import traceback
-                    processing_complete["error"] = str(proc_error)
-                    print(f"Error in PDF processing thread: {proc_error}")
+                    processing_complete["error"] = str(proc_error)                    print(f"Error in PDF processing thread: {proc_error}")
                     print(f"Traceback: {traceback.format_exc()}")
-              # Start the processing in a background thread
+            
+            # Start the processing in a background thread
             process_thread = threading.Thread(target=process_pdf)
             process_thread.daemon = True
             process_thread.start()
