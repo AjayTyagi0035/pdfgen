@@ -3,6 +3,9 @@ import os
 import uuid
 import zipfile
 import shutil
+import threading
+import time
+import traceback
 from werkzeug.utils import secure_filename
 from generate_pdf import create_multi_task_pdf_report
 
@@ -63,13 +66,9 @@ def upload_file():
                         os.remove(zip_path)                
                 except Exception as e:
                     print(f"Error removing ZIP file: {str(e)}")
-                    
-        output_filename = f"{base_filename}_report_{unique_id}.pdf"
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-          try:
+                      output_filename = f"{base_filename}_report_{unique_id}.pdf"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)        try:
             # Set a timeout for the process to avoid hanging the server
-            import threading
-            import time
             from functools import partial
             
             # Create a flag to track if processing completed
