@@ -63,11 +63,13 @@ def upload_file():
                 # Delete the zip file after extraction
                 try:
                     if os.path.exists(zip_path):
-                        os.remove(zip_path)                
-                except Exception as e:
+                        os.remove(zip_path)                  except Exception as e:
                     print(f"Error removing ZIP file: {str(e)}")
-                      output_filename = f"{base_filename}_report_{unique_id}.pdf"
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)        try:
+        
+        output_filename = f"{base_filename}_report_{unique_id}.pdf"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        
+        try:
             # Set a timeout for the process to avoid hanging the server
             from functools import partial
             
@@ -77,14 +79,14 @@ def upload_file():
             # Function to run in separate thread
             def process_pdf():
                 try:
-                    print(f"Starting PDF generation for {json_filename} with {len(os.listdir(images_dir))} images")
-                    # Call the PDF generation function with the images directory
+                    print(f"Starting PDF generation for {json_filename} with {len(os.listdir(images_dir))} images")                    # Call the PDF generation function with the images directory
                     create_multi_task_pdf_report(input_path, output_path, images_dir)
                     processing_complete["done"] = True
                     print(f"PDF generation completed successfully: {output_path}")
                 except Exception as proc_error:
                     import traceback
-                    processing_complete["error"] = str(proc_error)                    print(f"Error in PDF processing thread: {proc_error}")
+                    processing_complete["error"] = str(proc_error)
+                    print(f"Error in PDF processing thread: {proc_error}")
                     print(f"Traceback: {traceback.format_exc()}")
             
             # Start the processing in a background thread
@@ -119,9 +121,8 @@ def upload_file():
                     if os.path.exists(input_path):
                         os.remove(input_path)
                     if os.path.exists(output_path):
-                        os.remove(output_path)
-                    if os.path.exists(images_dir):
-                        shutil.rmtree(images_dir)                
+                        os.remove(output_path)                    if os.path.exists(images_dir):
+                        shutil.rmtree(images_dir)
                 except Exception as cleanup_error:
                     print(f"Error during cleanup: {cleanup_error}")
             
