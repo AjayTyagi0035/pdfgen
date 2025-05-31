@@ -65,7 +65,8 @@ def draw_bounding_boxes_and_annotations(image_path, targets, taps, swipes, outpu
                     y = max(0, min(y, height))
                     w = min(w, width - x)
                     h = min(h, height - y)
-                    draw.rectangle([x, y, x + w, y + h], outline='red', width=2)                except Exception as e:
+                    draw.rectangle([x, y, x + w, y + h], outline='red', width=2)                
+                except Exception as e:
                     print(f"Error drawing bounding box: {e}")
             
             # Draw crosses for tap actions
