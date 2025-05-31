@@ -58,23 +58,21 @@ def draw_bounding_boxes_and_annotations(image_path, targets, taps, swipes, outpu
             for target in targets:
                 try:
                     x, y, w, h = target['x'], target['y'], target['width'], target['height']
-                    # Ensure coordinates are within image bounds
-                    x = max(0, min(x, width))
+                    # Ensure coordinates are within image bounds                    x = max(0, min(x, width))
                     y = max(0, min(y, height))
                     w = min(w, width - x)
                     h = min(h, height - y)
-                    draw.rectangle([x, y, x + w, y + h], outline='red', width=2)
+                    draw.rectangle([x, y, x + w, y + h], outline='red', width=1)  # Reduced width from 2 to 1
                 except Exception as e:
                     print(f"Error drawing bounding box: {e}")            # Draw crosses for tap actions
             for tap in taps:
                 try:
-                    tap_x, tap_y = convert_to_pixels(img, tap['x'], tap['y'])
-                    # Ensure coordinates are within image bounds
+                    tap_x, tap_y = convert_to_pixels(img, tap['x'], tap['y'])                    # Ensure coordinates are within image bounds
                     tap_x = max(0, min(tap_x, width))
                     tap_y = max(0, min(tap_y, height))
-                    cross_size = 40
-                    draw.line((tap_x - cross_size, tap_y, tap_x + cross_size, tap_y), fill='red', width=5)
-                    draw.line((tap_x, tap_y - cross_size, tap_x, tap_y + cross_size), fill='red', width=5)
+                    cross_size = 20  # Reduced from 40 to 20
+                    draw.line((tap_x - cross_size, tap_y, tap_x + cross_size, tap_y), fill='red', width=2)  # Reduced width from 5 to 2
+                    draw.line((tap_x, tap_y - cross_size, tap_x, tap_y + cross_size), fill='red', width=2)  # Reduced width from 5 to 2
                 except Exception as e:
                     print(f"Error drawing tap cross: {e}")            # Draw arrows for swipe actions
             for swipe in swipes:
@@ -83,10 +81,9 @@ def draw_bounding_boxes_and_annotations(image_path, targets, taps, swipes, outpu
                     end_x, end_y = convert_to_pixels(img, swipe['endX'], swipe['endY'])
                     # Ensure coordinates are within image bounds
                     start_x = max(0, min(start_x, width))
-                    start_y = max(0, min(start_y, height))
-                    end_x = max(0, min(end_x, width))
+                    start_y = max(0, min(start_y, height))                    end_x = max(0, min(end_x, width))
                     end_y = max(0, min(end_y, height))
-                    draw_arrow(draw, start_x, start_y, end_x, end_y, fill='red', width=5)
+                    draw_arrow(draw, start_x, start_y, end_x, end_y, fill='red', width=2)  # Reduced width from 5 to 2
                 except Exception as e:
                     print(f"Error drawing swipe arrow: {e}")
 
@@ -102,10 +99,8 @@ def draw_arrow(draw, x1, y1, x2, y2, fill='red', width=5):
     draw.line((x1, y1, x2, y2), fill=fill, width=width)
 
     # Calculate the angle of the line
-    angle = math.atan2(y2 - y1, x2 - x1)
-
-    # Calculate the points for the arrowhead
-    arrow_length = 20
+    angle = math.atan2(y2 - y1, x2 - x1)    # Calculate the points for the arrowhead
+    arrow_length = 12  # Reduced from 20 to 12
     arrow_angle = math.pi / 6  # 30 degrees
 
     x3 = x2 - arrow_length * math.cos(angle - arrow_angle)
