@@ -323,11 +323,12 @@ def create_multi_task_pdf_report(json_file_path, output_pdf_path=None, images_di
                             break
                     
                     # Log image path search results for debugging
-                    if image_path:
-                        print(f"Found image at: {image_path}")
+                    if image_path:                        print(f"Found image at: {image_path}")
                     else:
                         print(f"Could not find image for ID {image_id}. Searched paths: {possible_paths}")
-                      img_element = None                    if image_path and os.path.exists(image_path):
+                    
+                    img_element = None
+                    if image_path and os.path.exists(image_path):
                         # First optimize the image to reduce processing time and memory usage
                         max_size = (800, 800)
                         quality = 85
