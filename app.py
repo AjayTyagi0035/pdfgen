@@ -57,13 +57,13 @@ def upload_file():
                     print(f"Error extracting ZIP file: {str(e)}")
                     return render_template('index.html', error=f"Error extracting ZIP file: {str(e)}")
                 
-                # Delete the zip file after extraction
-                try:
+                # Delete the zip file after extraction                try:
                     if os.path.exists(zip_path):
                         os.remove(zip_path)
                 except Exception as e:
                     print(f"Error removing ZIP file: {str(e)}")
-          output_filename = f"{base_filename}_report_{unique_id}.pdf"
+                    
+        output_filename = f"{base_filename}_report_{unique_id}.pdf"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         
         try:
@@ -71,11 +71,11 @@ def upload_file():
             import threading
             import time
             from functools import partial
-            
-            # Create a flag to track if processing completed
+              # Create a flag to track if processing completed
             processing_complete = {"done": False, "error": None}
             
-            # Function to run in separate thread            def process_pdf():
+            # Function to run in separate thread
+            def process_pdf():
                 try:
                     print(f"Starting PDF generation for {json_filename} with {len(os.listdir(images_dir))} images")
                     # Call the PDF generation function with the images directory
